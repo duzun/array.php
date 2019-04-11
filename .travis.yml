@@ -1,0 +1,33 @@
+language: php
+
+php:
+  - 7.3
+  - 7.2
+  - 7.1
+  - nightly
+  - hhvm
+
+matrix:
+    fast_finish: true
+    allow_failures:
+        - php: nightly
+        - php: hhvm
+
+dist: trusty
+
+sudo: false
+
+cache:
+    directories:
+        - tests/data/
+        - $HOME/.composer/cache
+
+install:
+    # remove composer lock to allow installing env speciffic versions
+    - rm -f composer.lock
+    # flags to pass to install
+    - flags="--prefer-dist --no-interaction --optimize-autoloader --no-suggest --no-progress"
+    # install dependencies using system provided composer binary
+    - composer install $flags
+
+script: phpunit tests/
