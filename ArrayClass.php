@@ -31,10 +31,12 @@ class ArrayClass {
 	        else
 	        if ( method_exists($obj, 'getRawData') && is_callable([$obj, 'getRawData']) ) {
 	            $obj = $obj->getRawData();
+                isset($obj) or $obj = []; // make sure the result is an array when not set
 	        }
 	        else
 	        if ( method_exists($obj, 'getArrayCopy') && is_callable([$obj, 'getArrayCopy']) ) {
 	            $obj = $obj->getArrayCopy();
+                isset($obj) or $obj = []; // make sure the result is an array when not set
 	        }
 	        else
 	        if ( $obj instanceof \Generator ) {
