@@ -52,7 +52,14 @@ class TestArray extends PHPUnit_BaseClass {
             }
         };
 
+        $u = new class() {
+            public function getArrayCopy() {
+                return;
+            }
+        };
+
         $this->assertEquals($t, AC::to_array($o), 'to_array(class::getArrayCopy())');
+        $this->assertEquals([], AC::to_array($u), 'to_array(class::getArrayCopy() == null) == []');
 
         $noa = new class {};
         $this->assertEquals($noa, AC::to_array($noa), 'to_array(class)');
