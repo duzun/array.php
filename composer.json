@@ -2,7 +2,7 @@
   "name": "duzun/array",
   "type": "library",
   "description": "Useful array methods in PHP",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "scripts": {
     "test": "phpunit ./tests/",
     "test:watch": "./test_watch.sh",

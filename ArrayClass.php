@@ -64,8 +64,10 @@ class ArrayClass {
 
 	// -------------------------------------------------------------------------
 	/**
+     * Check whether an array is associative or not (indexed?)
+     *
 	 * @param array   $array
-	 * @param boolean $strict
+	 * @param boolean $strict If true, require $array's keys to be 0,1,2..., otherwise return false.
 	 * @return bool
 	 */
 	public static function is_assoc($array, $strict = true): bool {
@@ -102,7 +104,7 @@ class ArrayClass {
 	 *
 	 * @return array   Multidimensional array with key path specified by $fields
 	 */
-	public static function group($list, $fields, $as_list = false) {
+	public static function group($list, $fields, bool $as_list = false) {
 
 	    if (empty($list)) {
 	        return $list;
@@ -110,7 +112,7 @@ class ArrayClass {
 
 	    $ret = [];
 
-	    foreach ($list as $key => $row) {
+	    foreach ($list as $row) {
 	        $gf = $fields;
 	        $first = true;
 	        $lvl = 0;
@@ -214,7 +216,86 @@ class ArrayClass {
 	    return $arr;
 	}
 
-	// -------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
+    /**
+     * Repeat the values of $array $times times.
+     *
+     * @param  array  $array
+     * @param  int    $times Any non-negative integer
+     * @return array  An indexed array containing the elements of $array $times times.
+     */
+    public static function repeat(array $array, int $times)
+    {
+        if ($times < 1) return [];
+
+        $array = array_values($array);
+        $ret = $array;
+        while (--$times) {
+            $ret = array_merge($ret, $array);
+        }
+
+        return $ret;
+    }
+
+    // -------------------------------------------------------------------------
+    /**
+     * Like array_slice(), only cyclic, as if the array was a ring and
+     * we can slice from any point any number of items, sequentially.
+     *
+     * @param  array        $arr           A source array to slice from
+     * @param  int          $offset        The position in the array to start from. Can be any integer.
+     * @param  int|null     $length        If it is omitted or its absolute value is equal to count($arr),
+     *                                     then the sequence will be a shifted version of the $arr.
+     *                                     If negative, the sequence is obtainer in reverse order.
+     *                                     Can be creater than the length of $arr.
+     * @param  bool|boolean $preserve_keys If true, preserve the keys, but the returned sequence can't be longer than $arr.
+     *                                     If false, no key is preserved, not even string keys.
+     * @return array
+     */
+    public static function cyclic_slice(array $arr, int $offset, int $length = NULL, bool $preserve_keys = false)
+    {
+        if ($length === 0) return [];
+
+        $count = count($arr);
+        if (!$count) return $arr;
+
+        $length = $length ?? $count;
+
+        $offset %= $count;
+        if ($offset < 0) $offset += $count;
+        if ($length < 0) {
+            $length = -$length;
+            $offset = $count - 1 - $offset;
+            $arr = array_reverse($arr, $preserve_keys);
+        }
+
+        if (!$preserve_keys) {
+            // Make sure $arr has no string keys, otherwhise array_slice() would preserve them.
+            $arr = array_values($arr);
+        }
+
+        $ret = array_slice($arr, $offset, $length, $preserve_keys);
+
+        $length += $offset - $count;
+        if ($length > 0) {
+            if ($length > $count) {
+                if (!$preserve_keys) {
+                    $ret = array_merge($ret, self::repeat($arr, $length / $count));
+                }
+                $length %= $count;
+            }
+            if ($preserve_keys) {
+                $ret += array_slice($arr, 0, $length, $preserve_keys);
+            }
+            else {
+                $ret = array_merge($ret, array_slice($arr, 0, $length, $preserve_keys));
+            }
+        }
+
+        return $ret;
+    }
+
+    // -------------------------------------------------------------------------
 	public static function part_unique(array $_pw, $u=true) {
 	    if ( $u === true || $u === 1 ) return array_unique($_pw);
 	    $ww =
