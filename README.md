@@ -1,6 +1,6 @@
 # array.php [![Build Status](https://travis-ci.org/duzun/array.php.svg?branch=master)](https://travis-ci.org/duzun/array.php)
 
-Useful array methods in PHP
+Useful array methods for PHP
 
 ```php
 use duzun\ArrayClass as AC;
