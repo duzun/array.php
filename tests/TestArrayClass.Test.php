@@ -13,19 +13,17 @@ require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . '_PHPUnit_BaseClass.php';
 
 // -----------------------------------------------------
 
-class TestArray extends PHPUnit_BaseClass
+class TestArrayClass extends PHPUnit_BaseClass
 {
     // -----------------------------------------------------
     public static $log       = true;
     public static $className = 'duzun\Array';
 
     // Before any test
-    public static function mySetUpBeforeClass()
-    { }
+    public static function mySetUpBeforeClass() {}
 
     // After all tests
-    public static function myTearDownAfterClass()
-    { }
+    public static function myTearDownAfterClass() {}
 
     // -----------------------------------------------------
     public function test_to_array()
@@ -45,7 +43,7 @@ class TestArray extends PHPUnit_BaseClass
         $this->assertEquals($t, AC::to_array(new \ArrayObject($t)), 'to_array(ArrayObject)');
 
         // Special method getArrayCopy()
-        $o = new class ($t)
+        $o = new class($t)
         {
             private $a;
             public function __construct(array $a)
@@ -58,7 +56,7 @@ class TestArray extends PHPUnit_BaseClass
             }
         };
 
-        $u = new class ()
+        $u = new class()
         {
             public function getArrayCopy()
             {
@@ -69,8 +67,7 @@ class TestArray extends PHPUnit_BaseClass
         $this->assertEquals($t, AC::to_array($o), 'to_array(class::getArrayCopy())');
         $this->assertEquals([], AC::to_array($u), 'to_array(class::getArrayCopy() == null) == []');
 
-        $noa = new class
-        { };
+        $noa = new class {};
         $this->assertEquals($noa, AC::to_array($noa), 'to_array(class)');
 
         $g = function () {
@@ -290,6 +287,150 @@ class TestArray extends PHPUnit_BaseClass
         );
     }
     // -----------------------------------------------------
+    public function test_sample()
+    {
+        $arr = range(0, 1000, 1);
+
+        $s = AC::sample($arr, 0.9543);
+        // should return a sample
+        $this->assertNotEmpty($s);
+        // should have only elements from source
+        $this->assertEmpty(array_diff($s, $arr));
+        // sample should return any element at most once
+        $this->assertEquals(array_unique($s), $s);
+        // should not return everything
+        $this->assertLessThan(count($arr), count($s));
+
+        // should work for small integer sizes
+        $this->assertEquals(0, count(AC::sample($arr, 0)));
+        $this->assertEquals(1, count(AC::sample($arr, 1.0)));
+        $this->assertEquals(2, count(AC::sample($arr, 2)));
+        $this->assertEquals(2, count(AC::sample($arr, 2.1)));
+
+        // round up
+        $this->assertEquals($arr, AC::sample($arr, .999999));
+        $this->assertEquals([reset($arr)], AC::sample($arr, .000001));
+
+        // should return at most the source
+        $this->assertEquals($arr, AC::sample($arr, count($arr)));
+        $this->assertEquals($arr, AC::sample($arr, count($arr) + 1));
+
+        // sample should be stable
+        $s1 = AC::sample($arr, 0.721);
+        $s2 = AC::sample($arr, 0.721);
+        $this->assertEquals($s1, $s2);
+
+        $s1 = AC::sample($arr, 123);
+        $s2 = AC::sample($arr, 123);
+        $this->assertEquals($s1, $s2);
+
+        // Sample using a validator function:
+        $vm = new ValidatorMock();
+
+        $s = AC::sample($arr, 0.1, $vm->is_inter());
+        $this->assertTrue($s);
+        $this->assertGreaterThanOrEqual(count($arr) * 0.1, $vm->calls);
+
+        $s = AC::sample($arr, 1, $vm->is_inter());
+        $this->assertTrue($s);
+        $this->assertEquals(1, $vm->calls);
+
+        $s = AC::sample($arr, 0, $vm->falser());
+        $this->assertTrue($s);
+        $this->assertEquals(0, $vm->calls);
+
+        $s = AC::sample($arr, 1, $vm->falser());
+        $this->assertFalse($s);
+        $this->assertEquals(1, $vm->calls);
+
+        $s = AC::sample($arr, .999999, $vm->is_inter());
+        $this->assertTrue($s);
+        $this->assertEquals(count($arr), $vm->calls);
+
+        // Sample using a validator with values
+        $s = AC::sample($arr, 0.11, $vm->is_evener());
+        $this->assertEquals(2, count($s));
+        $this->assertEmpty(array_diff_key($s, ['even' => 1, 'odd' => 1]));
+        $this->assertEquals(1, array_sum($s));
+        $this->assertGreaterThanOrEqual(intval(count($arr) * 0.11), $vm->calls);
+
+        // Get the types of the array elements
+        $s = array_keys(
+            AC::sample(
+                [0, 1.0, 'a', true, null, [], $this],
+                0.999,
+                function ($v) {
+                    return gettype($v);
+                }
+            )
+        );
+        sort($s);
+        $this->assertEquals([
+            'NULL',
+            'array',
+            'boolean',
+            'double',
+            'integer',
+            'object',
+            'string',
+        ], $s);
+    }
+    // -----------------------------------------------------
     // -----------------------------------------------------
 
+}
+
+
+class ValidatorMock
+{
+    public $calls = 0;
+
+    function reset()
+    {
+        $this->calls = 0;
+    }
+
+    function falser()
+    {
+        return $this->wrap(function () {
+            return false;
+        });
+    }
+
+    function truer()
+    {
+        return $this->wrap(function () {
+            return true;
+        });
+    }
+
+    function is_inter()
+    {
+        return $this->wrap(function ($v) {
+            return is_int($v);
+        });
+    }
+
+    function is_evener()
+    {
+        return $this->wrap(function ($v) {
+            return ($v & 1) ? 'odd' : 'even';
+        });
+    }
+
+    function gettyper()
+    {
+        return $this->wrap(function ($v) {
+            return gettype($v);
+        });
+    }
+
+    function wrap(callable $callable)
+    {
+        $this->reset();
+        return function (...$args) use ($callable) {
+            $this->calls++;
+            return $callable(...$args);
+        };
+    }
 }

@@ -80,3 +80,5 @@ phpunit*.phar
 .grunt
 .lock-wscript
 *.bak
+
+tmp/

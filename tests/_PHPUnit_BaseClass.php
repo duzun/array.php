@@ -37,7 +37,7 @@ abstract class PHPUnit_BaseClass extends PU_TestCase
     // Before every test
     public function mySetUp()
     {
-        self::$testName = $this->getName();
+        self::$testName  = method_exists($this, 'getName') ? $this->getName() : $this->name();
         self::$className = get_class($this);
 
         // parent::mySetUp();

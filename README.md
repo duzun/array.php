@@ -1,4 +1,4 @@
-# array.php [![Build Status](https://travis-ci.org/duzun/array.php.svg?branch=master)](https://travis-ci.org/duzun/array.php)
+# array.php
 
 Useful array methods for PHP
 
@@ -44,6 +44,7 @@ AC::is_assoc([1 => 'a', 2 => 'b', 3 => 'c'], false) === false;
 AC::is_assoc(['x' => 'a', 2 => 'b', 3 => 'c'], false) === true;
 ```
 
+Note: In strict mode, this is the same as `!array_is_list($array)`.
 
 ### ::repeat
 
@@ -171,6 +172,45 @@ AC::group($array, ['a', 'b'], false) == [
 ];
 ```
 
-#### See other methods in the [code](https://github.com/duzun/array.php/blob/master/ArrayClass.php) and [test](https://github.com/duzun/array.php/blob/master/tests/ArrayClass.Test.php) files.
+### ::sample
+
+Get a sample of a given size of an array or validate a sample or its elements with a predicate.
+
+```php
+ArrayClass::sample($arr, $size, callable $validate = null): array|bool
+```
+
+##### Examples
+
+```php
+$array = [1, 2, 3, 4, ..., 1000];
+
+// get a sample of 10% of $array
+AC::sample([$arr], 0.10) == [1, 10, 20, ..., 990, 1000];
+
+// get a sample of 3 element of $array
+AC::sample([$arr], 3) == [1, 500, 1000];
+
+// validate the array has only (int)s, with some probability
+AC::sample([$arr], 0.25, function ($v) { return is_int($v); }) == true;
+
+// get the types of the array elements with proportion
+AC::sample(
+    [0, 1.0, 'a', true, null, [], $this],
+    0.999,
+    function ($v) { return gettype($v); }
+) == [
+    'integer' => 0.14285714285714285,
+    'double' => 0.14285714285714285,
+    'string' => 0.14285714285714285,
+    'boolean' => 0.14285714285714285,
+    'NULL' => 0.14285714285714285,
+    'array' => 0.14285714285714285,
+    'object' => 0.14285714285714285,
+];
+
+```
+
+#### See other methods in the [code](https://github.com/duzun/array.php/blob/master/ArrayClass.php) and [test](https://github.com/duzun/array.php/blob/master/tests/TestArrayClass.Test.php) files.
 
 @TODO test and document everything else

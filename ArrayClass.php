@@ -20,7 +20,7 @@ class ArrayClass
             if ($recursive && $obj) {
                 $ret = [];
                 foreach ($obj as $k => $v) {
-                    $ret[$k] = to_array($v, $recursive);
+                    $ret[$k] = static::to_array($v, $recursive);
                 }
                 $obj = $ret;
             }
@@ -31,15 +31,15 @@ class ArrayClass
             if ($obj instanceof \stdClass) {
                 $obj = (array) $obj;
             } else
-	        if (method_exists($obj, 'getRawData') && is_callable([$obj, 'getRawData'])) {
+            if (method_exists($obj, 'getRawData') && is_callable([$obj, 'getRawData'])) {
                 $obj = $obj->getRawData();
                 isset($obj) or $obj = []; // make sure the result is an array when not set
             } else
-	        if (method_exists($obj, 'getArrayCopy') && is_callable([$obj, 'getArrayCopy'])) {
+            if (method_exists($obj, 'getArrayCopy') && is_callable([$obj, 'getArrayCopy'])) {
                 $obj = $obj->getArrayCopy();
                 isset($obj) or $obj = []; // make sure the result is an array when not set
             } else
-	        if ($obj instanceof \Generator) {
+            if ($obj instanceof \Generator) {
                 $idx = $asoc = [];
                 foreach ($obj as $k => $v) {
                     $idx[] = $asoc[$k] = $v;
@@ -48,13 +48,13 @@ class ArrayClass
                 $obj = count($idx) > count($asoc) ? $idx : $asoc;
                 unset($idx, $asoc); // free mem
             } else
-	        if ($obj instanceof \Traversable) {
+            if ($obj instanceof \Traversable) {
                 $obj = iterator_to_array($obj);
             } else {
                 return $obj;
             }
 
-            return $recursive ? to_array($obj) : $obj;
+            return $recursive ? static::to_array($obj) : $obj;
         }
 
         return (array) $obj;
@@ -64,6 +64,8 @@ class ArrayClass
     /**
      * Check whether an array is associative or not (indexed?)
      *
+     * In strict mode, this is the same as `!array_is_list($array)`
+     *
      * @param array   $array
      * @param boolean $strict If true, require $array's keys to be 0,1,2..., otherwise return false.
      * @return bool
@@ -71,6 +73,10 @@ class ArrayClass
     public static function is_assoc($array, $strict = true): bool
     {
         if ($strict) {
+            static $has_array_is_list = null;
+            isset($has_array_is_list) or $has_array_is_list = version_compare(PHP_VERSION, '8.1', '>=');
+            if ($has_array_is_list) return !array_is_list($array);
+
             $i = 0;
             foreach ($array as $k => $v) {
                 if ($k !== $i) {
@@ -92,7 +98,7 @@ class ArrayClass
     /**
      * Group array items of an array by a list of fields.
      *
-     * @param  array  $list    A list of (asociative) arrays
+     * @param  array  $list    A list of (associative) arrays
      * @param  array  $fields  List of fields/keys of values stored in $list.
      * @param  boolean $as_list If FALSE, array values are stored in resulting array
      *                          by key path of $fields. In case some values have same key path,
@@ -166,11 +172,15 @@ class ArrayClass
         $ret = [];
         if (isset($chr)) {
             foreach ($arr as $k => $v) {
-                $ret[$k] = !is_string($v) ? !is_array($v) ? $v : static::trim($v, $chr) : trim($v, $chr);
+                $ret[$k] = is_string($v)
+                    ? trim($v, $chr)
+                    : (is_array($v) ? static::trim($v, $chr) : $v);
             }
         } else {
             foreach ($arr as $k => $v) {
-                $ret[$k] = !is_string($v) ? !is_array($v) ? $v : static::trim($v) : trim($v);
+                $ret[$k] = is_string($v)
+                    ? trim($v)
+                    : (is_array($v) ? static::trim($v) : $v);
             }
         }
 
@@ -623,6 +633,75 @@ class ArrayClass
         }
         unset($r, $v, $p);
 
+        return $ret;
+    }
+
+    // -------------------------------------------------------------------------
+    /**
+     * Get a sample of a given size of the $arr.
+     *
+     * @param (array)$arr The source array
+     * @param (int|float)$size If >= 1, the absolute size of the sample.
+     *                         If < 1, the relative size of the sample.
+     * @param (callable) $validate A function returning true/false or a scalar value.
+     *                             When $validate returns false, ::sample() stops traversing $arr and returns false.
+     *                             If $validate returns true for all values of $arr, ::sample() returns true.
+     *                             If $validate returns other scalar values, ::sample()
+     *                             returns an associative array with these values at keys
+     *                             and the proportion of occurrences as values (sum($ret) == 1.0).
+     * @return (array|bool)
+     */
+    public static function sample($arr, $size, callable $validate = null)
+    {
+        $len = count($arr);
+        if ($size < 0) $size = $len + $size % $len;
+        if ($size == 0) {
+            return $validate ? true : [];
+        } elseif ($size >= $len) {
+            if (!$validate) return $arr;
+            $size = $len;
+            $pace = 1.0;
+        } elseif ($size < 1) {
+            $pace = 1 / $size;
+            $size = (int)ceil($size * $len);
+        } else {
+            $pace = $len / ($size - ($size > 1));
+        }
+
+        $ret = [];
+        $i = 0.0;
+        if ($validate) {
+            $count = 0;
+            foreach ($arr as $k => $v) {
+                if ($i < 1.0) {
+                    $r = $validate($v, $k, $ret);
+                    if ($r === false) return false;
+                    if ($r !== true) ++$ret[$r];
+                    if ($count++ >= $size) break;
+                    $i += $pace;
+                }
+                $i -= 1.0;
+            }
+            if ($count < $size) {
+                $r = $validate($v, $k, $ret);
+                if ($r === false) return false;
+                if ($r !== true) ++$ret[$r];
+            }
+            if (!$ret) return true;
+            foreach ($ret as &$count) $count /= $size;
+            unset($count); // break ref
+            return $ret;
+        }
+
+        foreach ($arr as $k => $v) {
+            if ($i < 1.0) {
+                $ret[$k] = $v;
+                if (count($ret) == $size) return $ret;
+                $i += $pace;
+            }
+            $i -= 1.0;
+        }
+        if ($i < 1.0) $ret[$k] = $v;
         return $ret;
     }
 
