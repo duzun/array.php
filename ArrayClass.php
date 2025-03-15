@@ -603,7 +603,7 @@ class ArrayClass
             case 3: {
                     foreach ($arr as $k => $v) {
                         if ($t = call_user_func_array($callback, $params)) {
-                            list($k, $v) = $t;
+                            [$k, $v] = $t;
                             if ($v === NULL && $del_null) {
                                 continue;
                             }
@@ -761,7 +761,7 @@ class _fasort_cmp_class
         } else {
             $fields = preg_split('#[,;\\|]#', $fields);
             foreach ($fields as $v) {
-                @list($n, $v) = preg_split('#[\\:=]#', $v);
+                @[$n, $v] = preg_split('#[\\:=]#', $v);
                 $v = isset($v) && (int) ($v . '1') < 0 ? ~$dir : $dir;
                 $f[$n] = $v;
             }
