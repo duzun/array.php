@@ -109,6 +109,9 @@ class TestArrayClass extends PHPUnit_BaseClass
     // -----------------------------------------------------
     public function test_group()
     {
+        $this->assertEquals([], AC::group([], ['a', 'b'], true));
+        $this->assertEquals([], AC::group([], ['a', 'b'], false));
+
         $a = [
             ['a' => 1, 'b' => 3, 'c' => 7],
             ['a' => 1, 'b' => 3, 'c' => 8],
@@ -117,6 +120,10 @@ class TestArrayClass extends PHPUnit_BaseClass
             ['a' => 2, 'b' => 5, 'c' => 11],
             ['a' => 2, 'b' => 5, 'c' => 11],
         ];
+
+        // No grouping -> noop
+        $this->assertEquals($a, AC::group($a, [], true));
+        $this->assertEquals($a, AC::group($a, [], false));
 
         $this->assertEquals(
             [
@@ -264,7 +271,7 @@ class TestArrayClass extends PHPUnit_BaseClass
         $this->assertEquals(['a' => 1, 'g' => 7, 9 => 6], AC::cyclic_slice($array, 0, -3, true));
         $this->assertEquals(['c' => 3, 'b' => 2, 'a' => 1], AC::cyclic_slice($array, 2, -3, true));
         $this->assertEquals(
-            ['e' => 5, 3 => 4, 'c' => 3, 'b' => 2, 'a' => 1, 'g' => 7, 9 => 6, 'e' => 5, 3 => 4],
+            ['e' => 5, 3 => 4, 'c' => 3, 'b' => 2, 'a' => 1, 'g' => 7, 9 => 6],
             AC::cyclic_slice($array, -3, -9, true)
         );
 
@@ -374,6 +381,18 @@ class TestArrayClass extends PHPUnit_BaseClass
             'object',
             'string',
         ], $s);
+
+        // Empty case
+        $this->assertEquals([], AC::sample([], 0));
+        $this->assertEquals(true, AC::sample([], 0, $vm->is_inter()));
+
+        $this->assertEquals([], AC::sample([], 0.9));
+        $this->assertEquals(true, AC::sample([], 0.9, $vm->is_inter()));
+
+        $this->assertEquals([], AC::sample([], 1));
+        $this->assertEquals(true, AC::sample([], 1, $vm->is_inter()));
+
+
     }
     // -----------------------------------------------------
     // -----------------------------------------------------

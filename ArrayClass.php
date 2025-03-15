@@ -111,12 +111,12 @@ class ArrayClass
     public static function group($list, $fields, bool $as_list = false)
     {
 
-        if (empty($list)) {
+        if (empty($list) || empty($fields)) {
             return $list;
         }
 
         $ret = [];
-
+        $oel = null; // define $oel
         foreach ($list as $row) {
             $gf = $fields;
             $first = true;
@@ -258,12 +258,12 @@ class ArrayClass
      * @param  int|null     $length        If it is omitted or its absolute value is equal to count($arr),
      *                                     then the sequence will be a shifted version of the $arr.
      *                                     If negative, the sequence is obtainer in reverse order.
-     *                                     Can be creater than the length of $arr.
+     *                                     Can be created than the length of $arr.
      * @param  bool|boolean $preserve_keys If true, preserve the keys, but the returned sequence can't be longer than $arr.
      *                                     If false, no key is preserved, not even string keys.
      * @return array
      */
-    public static function cyclic_slice(array $arr, int $offset, int $length = NULL, bool $preserve_keys = false)
+    public static function cyclic_slice(array $arr, int $offset, ?int $length = NULL, bool $preserve_keys = false)
     {
         if ($length === 0) return [];
 
@@ -545,6 +545,8 @@ class ArrayClass
             throw new \Exception(__METHOD__ . ': ' . $callback . '() is not callable!');
         }
 
+        $k = null;
+        $v = null;
         $ret = [];
         $del_null = $group = NULL;
         $trel = 0;
@@ -631,7 +633,7 @@ class ArrayClass
                 }
                 break;
         }
-        unset($r, $v, $p);
+        unset($r, $v, $k);
 
         return $ret;
     }
@@ -651,7 +653,7 @@ class ArrayClass
      *                             and the proportion of occurrences as values (sum($ret) == 1.0).
      * @return (array|bool)
      */
-    public static function sample($arr, $size, callable $validate = null)
+    public static function sample($arr, $size, ?callable $validate = null)
     {
         $len = count($arr);
         if ($size < 0) $size = $len + $size % $len;
