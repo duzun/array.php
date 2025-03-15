@@ -30,3 +30,7 @@ indent_size = 2
 [*.sublime-project]
 indent_style = tab
 indent_size = 4
+
+[*.{yml,yaml,neon}]
+indent_style = space
+indent_size = 4

@@ -72,6 +72,8 @@ tests/data/*
 
 ## Other
 
+phpstan.neon
+
 *.log
 phpunit*.phar
 

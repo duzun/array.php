@@ -3,8 +3,9 @@
 workdir=$(pwd)
 myname=$(basename "$0")
 
-PHPUNIT_VERSION_83=^10.2
-PHPUNIT_VERSION_82=^10.2
+PHPUNIT_VERSION_84=^12.0
+PHPUNIT_VERSION_83=^12.0
+PHPUNIT_VERSION_82=^11.0
 PHPUNIT_VERSION_81=^10.2
 PHPUNIT_VERSION_74=^9.6
 PHPUNIT_VERSION_73=^9.6
@@ -235,7 +236,7 @@ docker_run() {
 
 main() {
     # By default test the latest PHP version
-    [ $# -eq 0 ] && set -- "8.3"
+    [ $# -eq 0 ] && set -- "8.4"
 
     case $1 in
     main_in_docker)
@@ -247,6 +248,7 @@ main() {
     all)
         shift
         echo Running tests for all supported PHP versions &&
+            main 8.4 "$@" &&
             main 8.3 "$@" &&
             main 8.2 "$@" &&
             main 8.1 "$@" &&
