@@ -53,6 +53,7 @@ Repeat the values of an array a number of times (`array_fill()` on steroids).
 ```php
 ArrayClass::repeat(array $array, int $times): array
 ```
+
 ##### Examples
 
 ```php
@@ -68,7 +69,6 @@ AC::repeat([1], -5) === [];
 AC::repeat(['a' => 1, 'b' => 2, 'c' => 3], 3) === [1,2,3,1,2,3,1,2,3];
 AC::repeat(['a' => 1, 'b' => 2, 'c' => 3], 1) === [1,2,3];
 ```
-
 
 ### ::cyclic_slice
 
@@ -99,7 +99,6 @@ AC::cyclic_slice(['a','b','c','d'], -3, -9) === ['b','a','d','c','b','a','d','c'
 AC::cyclic_slice(['a'=>1, 'b'=>2, 'c'=>3, 'd'=>4], 3, 3) === ['d'=>4, 'a'=>1, 'b'=>2];
 ```
 
-
 ### ::id
 
 Given a list of items by IDs, get a new ID that doesn't exist in the list.
@@ -116,7 +115,6 @@ AC::id( [1] )                  === 1;
 AC::id( [2=>1] )               === 3;
 AC::id( [9=>0, 10=>1, 11=>2] ) === 12;
 ```
-
 
 ### ::group
 
@@ -211,6 +209,6 @@ AC::sample(
 
 ```
 
-#### See other methods in the [code](https://github.com/duzun/array.php/blob/master/ArrayClass.php) and [test](https://github.com/duzun/array.php/blob/master/tests/TestArrayClass.Test.php) files.
+#### See other methods in the [code](https://github.com/duzun/array.php/blob/master/src/ArrayClass.php) and [test](https://github.com/duzun/array.php/blob/master/tests/ArrayClassTest.php) files
 
 @TODO test and document everything else

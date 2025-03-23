@@ -6,9 +6,11 @@
   "scripts": {
     "test": "phpunit ./tests/",
     "test:watch": "./test.sh 8.3 w",
+    "test:8.4": "./test.sh 8.4",
     "test:8.3": "./test.sh 8.3",
     "test:8.2": "./test.sh 8.2",
     "test:8.1": "./test.sh 8.1",
+    "test:7.4": "./test.sh 7.4",
     "test:7.3": "./test.sh 7.3",
     "test:7.2": "./test.sh 7.2",
     "test:7.1": "./test.sh 7.1"
@@ -16,7 +18,8 @@
   "main": "ArrayClass.php",
   "autoload": {
     "psr-4": {
-      "duzun\\": "./"
+      "duzun\\": "src/",
+      "duzun\\ArrayClass\\Tests\\": "tests/"
     }
   },
   "license": "MIT",
@@ -55,6 +58,6 @@
     ]
   },
   "require": {
-    "php": ">=7.1"
+    "php": ">=7.1|>=8.4"
   }
 }

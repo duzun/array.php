@@ -485,9 +485,11 @@ class ArrayClass
             throw new \Exception(__METHOD__ . ': ' . $callback . '() is not callable!');
         }
 
+        $k = null;
         $ret = [];
         $params['k'] = &$k;
         if (array_key_exists('v', $params)) {
+            $v = null;
             $params['v'] = &$v;
         }
 
@@ -678,7 +680,7 @@ class ArrayClass
                 if ($i < 1.0) {
                     $r = $validate($v, $k, $ret);
                     if ($r === false) return false;
-                    if ($r !== true) ++$ret[$r];
+                    if ($r !== true) $ret[$r] = ($ret[$r] ?? 0) + 1;
                     if ($count++ >= $size) break;
                     $i += $pace;
                 }
@@ -687,7 +689,7 @@ class ArrayClass
             if ($count < $size) {
                 $r = $validate($v, $k, $ret);
                 if ($r === false) return false;
-                if ($r !== true) ++$ret[$r];
+                if ($r !== true) $ret[$r] = ($ret[$r] ?? 0) + 1;
             }
             if (!$ret) return true;
             foreach ($ret as &$count) $count /= $size;
@@ -742,7 +744,17 @@ class ArrayClass
 class _fasort_cmp_class
 {
 
-    private $f, $c;
+    /**
+     * Fields to sort by
+     * @var array|null
+     */
+    private $f;
+
+    /**
+     * Comparison method
+     * @var string
+     */
+    private $c;
 
     public function __construct($fields, $dir, $cmp = 'n')
     {

@@ -12,8 +12,8 @@ use Rector\Php84\Rector\Param\ExplicitNullableParamTypeRector;
 
 return RectorConfig::configure()
     ->withPaths([
-        __DIR__ . '/ArrayClass.php',
-        __DIR__ . '/tests/TestArrayClass.Test.php',
+        __DIR__ . '/src/',
+        __DIR__ . '/tests/',
     ])
     // uncomment to reach your current PHP version
     // ->withPhpSets()

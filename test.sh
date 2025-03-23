@@ -7,10 +7,13 @@ PHPUNIT_VERSION_84=^12.0
 PHPUNIT_VERSION_83=^12.0
 PHPUNIT_VERSION_82=^11.0
 PHPUNIT_VERSION_81=^10.2
+PHPUNIT_VERSION_80=^9.6
 PHPUNIT_VERSION_74=^9.6
 PHPUNIT_VERSION_73=^9.6
 PHPUNIT_VERSION_72=^8.5
 PHPUNIT_VERSION_71=^7.5
+
+# These versions are not supported any more, but we keep them here for history.
 PHPUNIT_VERSION_70=^6.5 #^5.7
 PHPUNIT_VERSION_56=^5.7
 PHPUNIT_VERSION_55=^4.8
@@ -21,16 +24,16 @@ DOCKER_VERSION_54=cli
 DOCKER_VERSION_53=cli
 
 # flags to pass to install
-flags="--prefer-dist --no-interaction --optimize-autoloader --no-suggest --no-progress"
+flags="--prefer-dist --no-interaction --optimize-autoloader --no-progress"
 
 usage() {
     cat <<EOH
-    $myname <php.ver>|"all" [w] {<phpunit_options>}
+    $myname <php.ver>|"all"|"edge" [w] {<phpunit_options>}
     $myname <php.ver> [sh|bash]
     $myname -h|--help|?
 Eg.
-    # Run unit-tests in PHP 8.2 with watch
-    $myname 8.2 w --filter ArrayClass
+    # Run unit-tests in PHP 8.4 with watch
+    $myname 8.4 w --filter ArrayClass
 EOH
 }
 
@@ -42,11 +45,20 @@ ver_num() {
     echo "$1" | cut -d- -f1 | sed 's/\.//g'
 }
 
+composer_php_vers() {
+    export PHP_INI_SCAN_DIR=/dev/null
+    composer show -s --format="json" 2>/dev/null \
+        | grep -Po '"php":\s*"\K[^"]+' \
+        | tr '|' '\n' \
+        | sed 's/^[^0-9]*//' \
+        | sort -V
+}
+
 main_in_docker() {
+    local watch c
     install_dev "$1" || return $?
     shift
 
-    local watch
     if [ "$1" = "w" ]; then
         watch=1
         shift
@@ -59,7 +71,7 @@ main_in_docker() {
     echo
     echo " - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
     echo
-    local c
+
     [ -s "$workdir/tests/phpunit.xml" ] && c="-c $workdir/tests/phpunit.xml"
     phpunit tests/ $c "$@"
 
@@ -73,16 +85,18 @@ main_in_docker() {
 
 # Watch a folder and rsync files to a destination on change
 watchnrun() {
-    local watchDir="$1"
+    # shellcheck disable=SC3043
+    local watchDir dir evt file fn _action action exclude i
+    action="$*"
+    watchDir="$1"
     shift
-    local action="$@"
 
     if [ -z "$watchDir" ]; then
         echo >&2 "Usage: watchnrun <watchDir> <command>"
         return 2
     fi
 
-    local exclude=".git|node_modules|vendor|composer.json|composer.lock|composer-setup.php"
+    exclude=".git|node_modules|vendor|composer.json|composer.lock|composer-setup.php"
 
     while i=$(
         inotifywait -qr -e modify -e create \
@@ -91,12 +105,10 @@ watchnrun() {
     ); do
         set -- $i
 
-        local dir=$1
-        local evt=$2
-        local file=$3
-        local _action
-
-        local fn="$dir$file"
+        dir=$1
+        evt=$2
+        file=$3
+        fn="$dir$file"
 
         echo
         echo "$evt $fn"
@@ -104,7 +116,7 @@ watchnrun() {
         case $evt in
         MODIFY | CREATE)
             case $file in
-            *.Test.php)
+            *Test.php)
                 set -- $action
                 _action=
                 while [ $# -ne 0 ]; do
@@ -133,8 +145,6 @@ watchnrun() {
 }
 
 install_dev() {
-    local version version_num phpunit_ver preinstall composer
-
     version=${1:?}
     version_num=$(ver_num "$version")
     phpunit_ver=$(var "PHPUNIT_VERSION_$version_num")
@@ -153,6 +163,8 @@ install_dev() {
         curl -ks -L https://curl.se/ca/cacert.pem >/etc/ssl/certs/ca-certificates.crt
     fi
 
+    # shellcheck disable=SC3043
+    local preinstall
     preinstall="preinstall_dev_$version_num"
 
     type "$preinstall" >/dev/null &&
@@ -168,11 +180,11 @@ install_dev() {
     if [ ! -s "$composer" ]; then
         # Install composer
         [ -d "$(dirname "$composer")" ] || mkdir -p "$(dirname "$composer")"
-        php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-        php composer-setup.php
-        # php composer-setup.php --disable-tls
-        mv -- composer.phar "$composer"
-        php -r "unlink('composer-setup.php');"
+        ( cd "$HOME" && \
+            php -r 'copy("https://getcomposer.org/installer", "composer-setup.php");' &&
+            php composer-setup.php --install-dir="$(dirname "$composer")" --filename="$(basename "$composer")" &&
+            php -r 'unlink("composer-setup.php");' \
+        )
     fi
     export PATH="$(realpath "$workdir/vendor/bin"):$PATH"
 
@@ -192,7 +204,6 @@ install_dev() {
     else
         "$composer" dump-autoload
     fi
-
 
     # The section bellow serves as an example for future, when there are dependencies:
 
@@ -225,23 +236,41 @@ install_dev() {
 # }
 
 docker_run() {
-    local image="$1"
-    local vendorDir="$workdir/tmp/$image/vendor"
+    # shellcheck disable=SC3043
+    local image vendorDir
+    image="$1"
+    vendorDir="$workdir/tmp/$image/vendor"
     [ -d "$vendorDir" ] || mkdir -p "$vendorDir"
-    docker run --rm -it \
+    docker run --rm "-i$(tty -s && echo t)" \
         -v "$workdir:/app" \
+        -u "$(id -u):0" \
+        -e "HOME=/app/vendor" \
         --mount 'type=bind,"src='"$vendorDir"'",dst=/app/vendor' \
         -w /app "$@"
 }
 
 main() {
+    # shellcheck disable=SC3043
+    local version docker_tag
+
     # By default test the latest PHP version
-    [ $# -eq 0 ] && set -- "8.4"
+    [ $# -eq 0 ] && set -- "$(composer_php_vers | tail -1)"
 
     case $1 in
     main_in_docker)
         shift
         main_in_docker "$@"
+        return $?
+        ;;
+
+    edge)
+        shift
+        hi=$(composer_php_vers | head -1)
+        lo=$(composer_php_vers | tail -1)
+        echo Running tests for $hi and $lo supported PHP versions &&
+            main "$hi" "$@" &&
+            main "$lo" "$@" &&
+        echo && echo "All done"
         return $?
         ;;
 
@@ -252,15 +281,16 @@ main() {
             main 8.3 "$@" &&
             main 8.2 "$@" &&
             main 8.1 "$@" &&
+            main 8.0 "$@" &&
             main 7.4 "$@" &&
             main 7.3 "$@" &&
             main 7.2 "$@" &&
             main 7.1 "$@" &&
-            main 7.0 "$@" &&
-            main 5.6 "$@" &&
-            main 5.5 "$@" &&
             echo && echo "All done"
+        return $?
         ;;
+
+    v) composer_php_vers; return $? ;;
 
     h | help | -h | --help | \?)
         usage
@@ -268,8 +298,6 @@ main() {
         ;;
 
     esac
-
-    local version docker_tag
 
     version=$1
     docker_tag="$version-$(var "DOCKER_VERSION_$(ver_num "$version")" 'alpine')"

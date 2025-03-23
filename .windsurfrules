@@ -1,0 +1,18 @@
+## Project structure and usage
+
+- See README.md
+- Useful array methods for PHP
+- The source code is in `src/ArrayClass.php`
+- The tests are in `tests/`
+- Tests are written for PHPUnit
+- Tests generate temporary files in `tests/tmp/`
+
+## Development
+
+- Supports a range of PHP versions, see `composer.json`
+- No prod dependencies
+- Tests run in docker containers with the help of `./test.sh` script
+- Test command is `./test.sh <php-version>`
+- Code style is defined in `.php-cs-fixer.dist.php`
+- Fix code style with `./test.sh 8.3 s cs:fix`
+
