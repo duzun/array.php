@@ -55,17 +55,33 @@ composer_php_vers() {
 }
 
 main_in_docker() {
+    # shellcheck disable=SC3043
     local watch c
     install_dev "$1" || return $?
     shift
 
-    if [ "$1" = "w" ]; then
+    case $1 in
+    s | script)
+        shift
+        $composer run "$@"
+        return $?
+        ;;
+    v | vendor)
+        shift
+        bin=$1
+        shift
+        ./vendor/bin/$bin "$@"
+        return $?
+        ;;
+    w)
         watch=1
         shift
         if ! command -v inotifywait >/dev/null; then
             apk -U add inotify-tools
         fi
-    fi
+        ;;
+    esac
+
 
     echo
     echo
@@ -80,7 +96,7 @@ main_in_docker() {
             phpunit tests/ $c "$@"
     fi
 
-    cd "$workdir" && [ -s 'composer.json.lock' ] && mv -f -- composer.json.lock composer.json
+    ( cd "$workdir" && [ -s 'composer.json.lock' ] && mv -f -- composer.json.lock composer.json )
 }
 
 # Watch a folder and rsync files to a destination on change
@@ -164,11 +180,12 @@ install_dev() {
     fi
 
     # shellcheck disable=SC3043
-    local preinstall
+    local preinstall postinstall
     preinstall="preinstall_dev_$version_num"
 
-    type "$preinstall" >/dev/null &&
-        $preinstall
+    if type "$preinstall" >/dev/null 2>&1; then
+        "$preinstall"
+    fi
 
     # if ! command -v git >/dev/null || ! command -v unzip >/dev/null; then
     #     apk -U add git unzip
@@ -205,6 +222,11 @@ install_dev() {
         "$composer" dump-autoload
     fi
 
+    postinstall="postinstall_dev_$version_num"
+    if type "$postinstall" >/dev/null 2>&1; then
+        "$postinstall"
+    fi
+
     # The section bellow serves as an example for future, when there are dependencies:
 
     # # Update some dependencies to this PHP version
@@ -217,6 +239,11 @@ install_dev() {
 
     # # Remove some tools not required for testing
     # "$composer" remove --dev apigen/apigen
+}
+
+postinstall_dev_83() {
+    echo "Installing PHP CS Fixer for PHP 8.3..."
+    $composer require --dev friendsofphp/php-cs-fixer $flags
 }
 
 # preinstall_dev_54() {

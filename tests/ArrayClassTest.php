@@ -1,9 +1,10 @@
 <?php
+
 namespace duzun\ArrayClass\Tests;
 
 use duzun\ArrayClass as AC;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Assert;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @author DUzun.Me
@@ -11,16 +12,14 @@ use PHPUnit\Framework\Assert;
  * @TODO: Test all methods
  */
 
-class ArrayClassTest extends TestCase
-{
+class ArrayClassTest extends TestCase {
     use TestLoggerTrait;
     // -----------------------------------------------------
     /** @var bool */
-    public static $log       = false;
+    public static $log = false;
 
     // -----------------------------------------------------
-    public function test_to_array()
-    {
+    public function test_to_array() {
         Assert::assertEquals([123], AC::to_array(123), 'to_array(int)');
         Assert::assertEquals(['string'], AC::to_array('string'), 'to_array(string)');
 
@@ -36,23 +35,18 @@ class ArrayClassTest extends TestCase
         Assert::assertEquals($t, AC::to_array(new \ArrayObject($t)), 'to_array(ArrayObject)');
 
         // Special method getArrayCopy()
-        $o = new class($t)
-        {
+        $o = new class ($t) {
             private $a;
-            public function __construct(array $a)
-            {
+            public function __construct(array $a) {
                 $this->a = $a;
             }
-            public function getArrayCopy(): array
-            {
+            public function getArrayCopy(): array {
                 return $this->a;
             }
         };
 
-        $u = new class()
-        {
-            public function getArrayCopy()
-            {
+        $u = new class () {
+            public function getArrayCopy() {
                 return;
             }
         };
@@ -60,7 +54,7 @@ class ArrayClassTest extends TestCase
         $this->assertEquals($t, AC::to_array($o), 'to_array(class::getArrayCopy())');
         $this->assertEquals([], AC::to_array($u), 'to_array(class::getArrayCopy() == null) == []');
 
-        $noa = new class {};
+        $noa = new class () {};
         $this->assertEquals($noa, AC::to_array($noa), 'to_array(class)');
 
         $g = function () {
@@ -73,9 +67,8 @@ class ArrayClassTest extends TestCase
     }
 
     // -----------------------------------------------------
-    public function test_is_assoc()
-    {
-        $indexed = array(0, 1, 2, 3, 345, 'any value', array('r' => true));
+    public function test_is_assoc() {
+        $indexed = [0, 1, 2, 3, 345, 'any value', ['r' => true]];
 
         Assert::assertFalse(AC::is_assoc($indexed, false));
         Assert::assertFalse(AC::is_assoc($indexed, true));
@@ -100,8 +93,7 @@ class ArrayClassTest extends TestCase
     }
 
     // -----------------------------------------------------
-    public function test_group()
-    {
+    public function test_group() {
         Assert::assertEquals([], AC::group([], ['a', 'b'], true));
         Assert::assertEquals([], AC::group([], ['a', 'b'], false));
 
@@ -172,8 +164,8 @@ class ArrayClassTest extends TestCase
                         ['a' => 2, 'b' => 3, 'c' => 10],
                     ],
                     5 => [
-                        ['a' => 2, 'b' => 5, 'c' => 11,],
-                        ['a' => 2, 'b' => 5, 'c' => 11,],
+                        ['a' => 2, 'b' => 5, 'c' => 11],
+                        ['a' => 2, 'b' => 5, 'c' => 11],
                     ],
                 ],
             ],
@@ -182,16 +174,14 @@ class ArrayClassTest extends TestCase
     }
 
     // -----------------------------------------------------
-    public function test_id()
-    {
-        Assert::assertEquals(1, AC::id(NULL));
+    public function test_id() {
+        Assert::assertEquals(1, AC::id(null));
         Assert::assertEquals(1, AC::id([1]));
         Assert::assertEquals(3, AC::id([2 => 1]));
         Assert::assertEquals(12, AC::id([9 => 0, 10 => 1, 11 => 2]));
     }
     // -----------------------------------------------------
-    public function test_repeat()
-    {
+    public function test_repeat() {
         Assert::assertEquals([], AC::repeat([1], 0));
         Assert::assertEquals([], AC::repeat([1], -5));
         Assert::assertEquals([1, 1, 1], AC::repeat([1], 3));
@@ -200,8 +190,7 @@ class ArrayClassTest extends TestCase
         Assert::assertEquals([1, 2, 3], AC::repeat([1, 2, 3], 1));
     }
     // -----------------------------------------------------
-    public function test_cyclic_slice()
-    {
+    public function test_cyclic_slice() {
         $array = ['a' => 1, 'b' => 2, 'c' => 3, 3 => 4, 'e' => 5, 9 => 6, 'g' => 7];
 
         // Trivial cases
@@ -287,8 +276,7 @@ class ArrayClassTest extends TestCase
         );
     }
     // -----------------------------------------------------
-    public function test_sample()
-    {
+    public function test_sample() {
         $arr = range(0, 1000, 1);
 
         $s = AC::sample($arr, 0.9543);
@@ -385,7 +373,6 @@ class ArrayClassTest extends TestCase
 
         Assert::assertEquals([], AC::sample([], 1));
         Assert::assertEquals(true, AC::sample([], 1, $vm->is_inter()));
-
 
     }
     // -----------------------------------------------------

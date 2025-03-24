@@ -1,4 +1,5 @@
 <?php
+
 namespace duzun\ArrayClass\Tests;
 
 /**
@@ -6,22 +7,20 @@ namespace duzun\ArrayClass\Tests;
  *
  * @author Dumitru Uzun (DUzun.Me)
  */
-trait TestLoggerTrait
-{
+trait TestLoggerTrait {
     /** @var bool */
     // public static $log = true; // define in the class
 
     /** @var string|null */
-    protected static $testName = null;
+    protected static $testName;
 
     /** @var string|null */
-    protected static $className = null;
+    protected static $className;
 
     /**
      * Initialize test logging context
      */
-    protected function initTestLogger()
-    {
+    protected function initTestLogger() {
         self::$testName = method_exists($this, 'getName') ? $this->getName() : $this->name();
         self::$className = get_class($this);
     }
@@ -34,8 +33,7 @@ trait TestLoggerTrait
     /**
      * @param mixed ...$args
      */
-    public static function log(...$args)
-    {
+    public static function log(...$args) {
         if (!self::$log) {
             return;
         }
@@ -55,25 +53,23 @@ trait TestLoggerTrait
         }, $args);
 
         echo PHP_EOL,
-            str_pad(++$idx, 3, ' ', STR_PAD_LEFT),
-            ")\t",
-            implode(' ', $formattedArgs),
-            PHP_EOL;
+        str_pad(++$idx, 3, ' ', STR_PAD_LEFT),
+        ")\t",
+        implode(' ', $formattedArgs),
+        PHP_EOL;
     }
 
     /**
      * Enable logging
      */
-    public static function enableLog()
-    {
+    public static function enableLog() {
         self::$log = true;
     }
 
     /**
      * Disable logging
      */
-    public static function disableLog()
-    {
+    public static function disableLog() {
         self::$log = false;
     }
 }

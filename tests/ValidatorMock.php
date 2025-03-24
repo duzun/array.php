@@ -1,55 +1,48 @@
 <?php
+
 namespace duzun\ArrayClass\Tests;
 
 /**
  * Mock class for testing validator functions
  */
-class ValidatorMock
-{
+class ValidatorMock {
     public $calls = 0;
 
-    function reset()
-    {
+    public function reset() {
         $this->calls = 0;
     }
 
-    function falser()
-    {
+    public function falser() {
         return $this->wrap(function () {
             return false;
         });
     }
 
-    function truer()
-    {
+    public function truer() {
         return $this->wrap(function () {
             return true;
         });
     }
 
-    function is_inter()
-    {
+    public function is_inter() {
         return $this->wrap(function ($v) {
             return is_int($v);
         });
     }
 
-    function is_evener()
-    {
+    public function is_evener() {
         return $this->wrap(function ($v) {
             return ($v & 1) ? 'odd' : 'even';
         });
     }
 
-    function gettyper()
-    {
+    public function gettyper() {
         return $this->wrap(function ($v) {
             return gettype($v);
         });
     }
 
-    function wrap(callable $callable)
-    {
+    public function wrap(callable $callable) {
         $this->reset();
         return function (...$args) use ($callable) {
             $this->calls++;

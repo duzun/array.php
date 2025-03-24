@@ -2,9 +2,7 @@
 
 namespace duzun;
 
-class ArrayClass
-{
-
+class ArrayClass {
     /**
      * Try to convert a value into Array.
      *
@@ -14,8 +12,7 @@ class ArrayClass
      *                      object without a known method to extract array from it,
      *                      in which case $obj is returned as is.
      */
-    public static function to_array($obj, $recursive = false)
-    {
+    public static function to_array($obj, $recursive = false) {
         if (is_array($obj)) {
             if ($recursive && $obj) {
                 $ret = [];
@@ -30,16 +27,16 @@ class ArrayClass
         if (is_object($obj)) {
             if ($obj instanceof \stdClass) {
                 $obj = (array) $obj;
-            } else
-            if (method_exists($obj, 'getRawData') && is_callable([$obj, 'getRawData'])) {
+            }
+            elseif (method_exists($obj, 'getRawData') && is_callable([$obj, 'getRawData'])) {
                 $obj = $obj->getRawData();
                 isset($obj) or $obj = []; // make sure the result is an array when not set
-            } else
-            if (method_exists($obj, 'getArrayCopy') && is_callable([$obj, 'getArrayCopy'])) {
+            }
+            elseif (method_exists($obj, 'getArrayCopy') && is_callable([$obj, 'getArrayCopy'])) {
                 $obj = $obj->getArrayCopy();
                 isset($obj) or $obj = []; // make sure the result is an array when not set
-            } else
-            if ($obj instanceof \Generator) {
+            }
+            elseif ($obj instanceof \Generator) {
                 $idx = $asoc = [];
                 foreach ($obj as $k => $v) {
                     $idx[] = $asoc[$k] = $v;
@@ -47,10 +44,11 @@ class ArrayClass
                 // If the generator $obj yielded the same key twice, ignore keys altogether
                 $obj = count($idx) > count($asoc) ? $idx : $asoc;
                 unset($idx, $asoc); // free mem
-            } else
-            if ($obj instanceof \Traversable) {
+            }
+            elseif ($obj instanceof \Traversable) {
                 $obj = iterator_to_array($obj);
-            } else {
+            }
+            else {
                 return $obj;
             }
 
@@ -70,12 +68,13 @@ class ArrayClass
      * @param boolean $strict If true, require $array's keys to be 0,1,2..., otherwise return false.
      * @return bool
      */
-    public static function is_assoc($array, $strict = true): bool
-    {
+    public static function is_assoc($array, $strict = true): bool {
         if ($strict) {
             static $has_array_is_list = null;
             isset($has_array_is_list) or $has_array_is_list = version_compare(PHP_VERSION, '8.1', '>=');
-            if ($has_array_is_list) return !array_is_list($array);
+            if ($has_array_is_list) {
+                return !array_is_list($array);
+            }
 
             $i = 0;
             foreach ($array as $k => $v) {
@@ -85,7 +84,8 @@ class ArrayClass
 
                 ++$i;
             }
-        } else {
+        }
+        else {
             foreach ($array as $k => $v) {
                 if (!is_int($k)) {
                     return true;
@@ -108,8 +108,7 @@ class ArrayClass
      *
      * @return array   Multidimensional array with key path specified by $fields
      */
-    public static function group($list, $fields, bool $as_list = false)
-    {
+    public static function group($list, $fields, bool $as_list = false) {
 
         if (empty($list) || empty($fields)) {
             return $list;
@@ -128,13 +127,15 @@ class ArrayClass
                 if ($first) {
                     $oel = &$ret[$val];
                     $first = false;
-                } else {
+                }
+                else {
                     $oel = &$oel[$val];
                 }
             }
             if ($as_list) {
                 $oel[] = $row;
-            } else {
+            }
+            else {
                 $oel = $row;
             }
         }
@@ -150,9 +151,10 @@ class ArrayClass
      * @param  array $arr A list of items with IDs as keys
      * @return int   a new ID to be added to the list
      */
-    public static function id($arr)
-    {
-        if (is_null($arr)) return 1;
+    public static function id($arr) {
+        if (is_null($arr)) {
+            return 1;
+        }
         $id = key($arr) and ++$id;
         if ($id === false) {
             end($arr);
@@ -167,8 +169,7 @@ class ArrayClass
     }
 
     // ---------------------------------------------------------------
-    public static function trim($arr, $chr = NULL)
-    {
+    public static function trim($arr, $chr = null) {
         $ret = [];
         if (isset($chr)) {
             foreach ($arr as $k => $v) {
@@ -176,7 +177,8 @@ class ArrayClass
                     ? trim($v, $chr)
                     : (is_array($v) ? static::trim($v, $chr) : $v);
             }
-        } else {
+        }
+        else {
             foreach ($arr as $k => $v) {
                 $ret[$k] = is_string($v)
                     ? trim($v)
@@ -188,36 +190,35 @@ class ArrayClass
     }
 
     // -------------------------------------------------------------------------
-    public static function select($arr, $keys, $force_null = false)
-    {
+    public static function select($arr, $keys, $force_null = false) {
         $ret = [];
-        is_array($keys) or is_object($keys) or $keys = array($keys);
+        is_array($keys) or is_object($keys) or $keys = [$keys];
         foreach ($keys as $k) {
             if (isset($arr[$k])) {
                 $ret[$k] = $arr[$k];
-            } elseif ($force_null) {
-                $ret[$k] = NULL;
+            }
+            elseif ($force_null) {
+                $ret[$k] = null;
             }
         }
         return $ret;
     }
 
-    public static function select_ref(&$arr, $keys, $force_null = false)
-    {
+    public static function select_ref(&$arr, $keys, $force_null = false) {
         $ret = [];
-        is_array($keys) or is_object($keys) or $keys = array($keys);
+        is_array($keys) or is_object($keys) or $keys = [$keys];
         foreach ($keys as $k) {
             if (isset($arr[$k])) {
                 $ret[$k] = &$arr[$k];
-            } elseif ($force_null) {
-                $ret[$k] = NULL;
+            }
+            elseif ($force_null) {
+                $ret[$k] = null;
             }
         }
         return $ret;
     }
 
-    public static function select_pref($arr, $pref)
-    {
+    public static function select_pref($arr, $pref) {
         $len = strlen($pref);
         foreach ($arr as $k => $v) {
             if (strncmp($k, $pref, $len)) {
@@ -235,9 +236,10 @@ class ArrayClass
      * @param  int    $times Any non-negative integer
      * @return array  An indexed array containing the elements of $array $times times.
      */
-    public static function repeat(array $array, int $times)
-    {
-        if ($times < 1) return [];
+    public static function repeat(array $array, int $times) {
+        if ($times < 1) {
+            return [];
+        }
 
         $array = array_values($array);
         $ret = $array;
@@ -263,17 +265,22 @@ class ArrayClass
      *                                     If false, no key is preserved, not even string keys.
      * @return array
      */
-    public static function cyclic_slice(array $arr, int $offset, ?int $length = NULL, bool $preserve_keys = false)
-    {
-        if ($length === 0) return [];
+    public static function cyclic_slice(array $arr, int $offset, ?int $length = null, bool $preserve_keys = false) {
+        if ($length === 0) {
+            return [];
+        }
 
         $count = count($arr);
-        if (!$count) return $arr;
+        if (!$count) {
+            return $arr;
+        }
 
         $length = $length ?? $count;
 
         $offset %= $count;
-        if ($offset < 0) $offset += $count;
+        if ($offset < 0) {
+            $offset += $count;
+        }
         if ($length < 0) {
             $length = -$length;
             $offset = $count - 1 - $offset;
@@ -297,7 +304,8 @@ class ArrayClass
             }
             if ($preserve_keys) {
                 $ret += array_slice($arr, 0, $length, $preserve_keys);
-            } else {
+            }
+            else {
                 $ret = array_merge($ret, array_slice($arr, 0, $length, $preserve_keys));
             }
         }
@@ -306,9 +314,10 @@ class ArrayClass
     }
 
     // -------------------------------------------------------------------------
-    public static function part_unique(array $_pw, $u = true)
-    {
-        if ($u === true || $u === 1) return array_unique($_pw);
+    public static function part_unique(array $_pw, $u = true) {
+        if ($u === true || $u === 1) {
+            return array_unique($_pw);
+        }
         $ww =
             $_pwu = [];
         if ($u < 0) {
@@ -320,7 +329,8 @@ class ArrayClass
                 }
                 $_pwu[$t] = $t;
             }
-        } elseif ($u < 1) {
+        }
+        elseif ($u < 1) {
             foreach ($_pw as $t) {
                 for ($l = strlen($t), $i = round(strlen($t) * $u); $i < $l; $i++) {
                     $p = substr($t, 0, $i);
@@ -335,11 +345,12 @@ class ArrayClass
 
     // -------------------------------------------------------------------------
 
-    public static function shuffle_assoc(array &$array)
-    {
+    public static function shuffle_assoc(array &$array) {
         $keys = array_keys($array);
 
-        if (!shuffle($keys)) return false;
+        if (!shuffle($keys)) {
+            return false;
+        }
         $new = [];
 
         foreach ($keys as $key) {
@@ -364,12 +375,12 @@ class ArrayClass
      * @param  integer|string $root key to preserve
      * @return array filtered
      */
-    public static function remove_orphan_keys(array $list, $root = NULL)
-    {
+    public static function remove_orphan_keys(array $list, $root = null) {
         if (isset($root)) {
             is_array($root) or $root = [$root];
-        } else {
-            $root = array_keys($list, NULL, true);
+        }
+        else {
+            $root = array_keys($list, null, true);
             // $root[] = NULL;
         }
         $root = array_combine($root, $root);
@@ -380,7 +391,8 @@ class ArrayClass
             $c = count($list);
             $list = array_diff($list, array_diff($list, array_keys($list), $root)) +
                 array_intersect_key($list, $root);
-        } while ($c && count($list) < $c);
+        }
+        while ($c && count($list) < $c);
 
         return $list;
     }
@@ -412,8 +424,7 @@ class ArrayClass
      * [7 => 'a', 5 => 'a', 3 => 'b'] !$idx -> ['a' => [ 0 => 7, 1 => 5 ], 'b' => 3 ]
      *                                 $idx -> ['a' => [ 7 => 7, 5 => 5 ], 'b' => 3 ]
      */
-    public static function flip_grouped($arr, $idx = false)
-    {
+    public static function flip_grouped($arr, $idx = false) {
         $s = array_flip($arr);
         if (count($s) != count($arr)) {
             $arr = array_diff_key($arr, array_flip($s));
@@ -426,7 +437,8 @@ class ArrayClass
                     $k[$s[$i]] = $s[$i]; // array_flip() preserves last occurrences of key from $arr
                     $s[$i] = &$k;
                 }
-            } else {
+            }
+            else {
                 foreach ($arr as $i => &$k) {
                     $g[$k][] = $i;
                 }
@@ -452,14 +464,14 @@ class ArrayClass
      * @author Dumitru Uzun (DUzun)
      *
      */
-    public static function flip_by_field($arr, $field, $group = false)
-    {
+    public static function flip_by_field($arr, $field, $group = false) {
         $ret = [];
         foreach ($arr as $i => $v) {
             $n = $v[$field];
             if ($group && isset($ret[$n])) {
-                is_array(@$ret[$n]) ? $ret[$n][] = $i : $ret[$n] = array($ret[$n], $i);
-            } else {
+                is_array(@$ret[$n]) ? $ret[$n][] = $i : $ret[$n] = [$ret[$n], $i];
+            }
+            else {
                 $ret[$n] = $i;
             }
         }
@@ -479,8 +491,7 @@ class ArrayClass
      * @author Dumitru Uzun (DUzun)
      *
      */
-    public static function transform_key($arr, $callback, $group = false, $params = NULL)
-    {
+    public static function transform_key($arr, $callback, $group = false, $params = null) {
         if (!is_callable($callback)) {
             throw new \Exception(__METHOD__ . ': ' . $callback . '() is not callable!');
         }
@@ -507,7 +518,8 @@ class ArrayClass
 
                     $r = $v;
                     unset($r);
-                } else {
+                }
+                else {
                     $ret[$k] = $v;
                 }
             }
@@ -541,8 +553,7 @@ class ArrayClass
      * @author Dumitru Uzun (DUzun)
      *
      */
-    public static function transform($arr, $callback, $params = NULL)
-    {
+    public static function transform($arr, $callback, $params = null) {
         if (!is_callable($callback)) {
             throw new \Exception(__METHOD__ . ': ' . $callback . '() is not callable!');
         }
@@ -550,89 +561,87 @@ class ArrayClass
         $k = null;
         $v = null;
         $ret = [];
-        $del_null = $group = NULL;
+        $del_null = $group = null;
         $trel = 0;
         if (array_key_exists('k', $params)) {
-            $group = !!$params['k'];
+            $group = (bool) $params['k'];
             $params['k'] = &$k;
             $trel |= 1;
         }
         if (!$trel || array_key_exists('v', $params)) {
-            $del_null = !!$params['v'];
+            $del_null = (bool) $params['v'];
             $params['v'] = &$v;
             $trel |= 2;
         }
 
         switch ($trel) {
-            case 1: {
-                    foreach ($arr as $k => $v) {
-                        $k = call_user_func_array($callback, $params);
-                        if ($k !== false) {
-                            if (is_array($k)) {
-                                if (!$k) {
-                                    continue;
-                                }
-
-                                $p = &$ret;
-                                foreach ($k as $t) {
-                                    $r = &$p;
-                                    $p = &$r[$t];
-                                }
-                                $k = $t;
-                                unset($p);
-                            } else {
-                                $r = &$ret;
-                            }
-                            if ($group && isset($r[$k])) {
-                                $r[$k] = array_merge((array) $r[$k], (array) $v);
-                            } else {
-                                $r[$k] = $v;
-                            }
+            case 1: foreach ($arr as $k => $v) {
+                $k = call_user_func_array($callback, $params);
+                if ($k !== false) {
+                    if (is_array($k)) {
+                        if (!$k) {
+                            continue;
                         }
+
+                        $p = &$ret;
+                        foreach ($k as $t) {
+                            $r = &$p;
+                            $p = &$r[$t];
+                        }
+                        $k = $t;
+                        unset($p);
                     }
-                    unset($r);
+                    else {
+                        $r = &$ret;
+                    }
+                    if ($group && isset($r[$k])) {
+                        $r[$k] = array_merge((array) $r[$k], (array) $v);
+                    }
+                    else {
+                        $r[$k] = $v;
+                    }
                 }
+            }
+                unset($r);
                 break;
 
-            case 2: {
-                    foreach ($arr as $k => $v) {
-                        $v = call_user_func_array($callback, $params);
-                        $v === NULL and $del_null or $ret[$k] = $v;
-                    }
-                }
+            case 2: foreach ($arr as $k => $v) {
+                $v = call_user_func_array($callback, $params);
+                $v === null and $del_null or $ret[$k] = $v;
+            }
                 break;
 
-            case 3: {
-                    foreach ($arr as $k => $v) {
-                        if ($t = call_user_func_array($callback, $params)) {
-                            [$k, $v] = $t;
-                            if ($v === NULL && $del_null) {
-                                continue;
-                            }
+            case 3: foreach ($arr as $k => $v) {
+                if ($t = call_user_func_array($callback, $params)) {
+                    [$k, $v] = $t;
+                    if ($v === null && $del_null) {
+                        continue;
+                    }
 
-                            if (is_array($k)) {
-                                if (!$k) {
-                                    continue;
-                                }
-
-                                $p = &$ret;
-                                foreach ($k as $t) {
-                                    $r = &$p;
-                                    $p = &$r[$t];
-                                }
-                                $k = $t;
-                                unset($p);
-                            } else {
-                                $r = &$ret;
-                            }
-                            if ($group && isset($r[$k])) {
-                                $r[$k] = array_merge((array) $r[$k], (array) $v);
-                            } else {
-                                $r[$k] = $v;
-                            }
+                    if (is_array($k)) {
+                        if (!$k) {
+                            continue;
                         }
+
+                        $p = &$ret;
+                        foreach ($k as $t) {
+                            $r = &$p;
+                            $p = &$r[$t];
+                        }
+                        $k = $t;
+                        unset($p);
+                    }
+                    else {
+                        $r = &$ret;
+                    }
+                    if ($group && isset($r[$k])) {
+                        $r[$k] = array_merge((array) $r[$k], (array) $v);
+                    }
+                    else {
+                        $r[$k] = $v;
                     }
                 }
+            }
                 break;
         }
         unset($r, $v, $k);
@@ -655,20 +664,26 @@ class ArrayClass
      *                             and the proportion of occurrences as values (sum($ret) == 1.0).
      * @return (array|bool)
      */
-    public static function sample($arr, $size, ?callable $validate = null)
-    {
+    public static function sample($arr, $size, ?callable $validate = null) {
         $len = count($arr);
-        if ($size < 0) $size = $len + $size % $len;
+        if ($size < 0) {
+            $size = $len + $size % $len;
+        }
         if ($size == 0) {
             return $validate ? true : [];
-        } elseif ($size >= $len) {
-            if (!$validate) return $arr;
+        }
+        elseif ($size >= $len) {
+            if (!$validate) {
+                return $arr;
+            }
             $size = $len;
             $pace = 1.0;
-        } elseif ($size < 1) {
+        }
+        elseif ($size < 1) {
             $pace = 1 / $size;
             $size = (int)ceil($size * $len);
-        } else {
+        }
+        else {
             $pace = $len / ($size - ($size > 1));
         }
 
@@ -679,20 +694,34 @@ class ArrayClass
             foreach ($arr as $k => $v) {
                 if ($i < 1.0) {
                     $r = $validate($v, $k, $ret);
-                    if ($r === false) return false;
-                    if ($r !== true) $ret[$r] = ($ret[$r] ?? 0) + 1;
-                    if ($count++ >= $size) break;
+                    if ($r === false) {
+                        return false;
+                    }
+                    if ($r !== true) {
+                        $ret[$r] = ($ret[$r] ?? 0) + 1;
+                    }
+                    if ($count++ >= $size) {
+                        break;
+                    }
                     $i += $pace;
                 }
                 $i -= 1.0;
             }
             if ($count < $size) {
                 $r = $validate($v, $k, $ret);
-                if ($r === false) return false;
-                if ($r !== true) $ret[$r] = ($ret[$r] ?? 0) + 1;
+                if ($r === false) {
+                    return false;
+                }
+                if ($r !== true) {
+                    $ret[$r] = ($ret[$r] ?? 0) + 1;
+                }
             }
-            if (!$ret) return true;
-            foreach ($ret as &$count) $count /= $size;
+            if (!$ret) {
+                return true;
+            }
+            foreach ($ret as &$count) {
+                $count /= $size;
+            }
             unset($count); // break ref
             return $ret;
         }
@@ -700,12 +729,16 @@ class ArrayClass
         foreach ($arr as $k => $v) {
             if ($i < 1.0) {
                 $ret[$k] = $v;
-                if (count($ret) == $size) return $ret;
+                if (count($ret) == $size) {
+                    return $ret;
+                }
                 $i += $pace;
             }
             $i -= 1.0;
         }
-        if ($i < 1.0) $ret[$k] = $v;
+        if ($i < 1.0) {
+            $ret[$k] = $v;
+        }
         return $ret;
     }
 
@@ -723,10 +756,9 @@ class ArrayClass
      * @param  boolean $big_null
      * @return array             Sorted array
      */
-    public static function fasort(&$arr, $fields = NULL, $dir = 1, $str_sort = false, $big_null = false)
-    {
+    public static function fasort(&$arr, $fields = null, $dir = 1, $str_sort = false, $big_null = false) {
         count($arr) > 1 || !is_array($arr) and
-            uasort($arr, array(new _fasort_cmp_class($fields, $dir, $str_sort ? ($big_null ? 't' : 's') : ($big_null ? 'l' : 'n')), '_'));
+            uasort($arr, [new _fasort_cmp_class($fields, $dir, $str_sort ? ($big_null ? 't' : 's') : ($big_null ? 'l' : 'n')), '_']);
         return $arr;
     }
 
@@ -735,15 +767,12 @@ class ArrayClass
 
 }
 
-
 /**
  * Internal class, used by Array::fasort()
  *
  * @private
  */
-class _fasort_cmp_class
-{
-
+class _fasort_cmp_class {
     /**
      * Fields to sort by
      * @var array|null
@@ -756,21 +785,22 @@ class _fasort_cmp_class
      */
     private $c;
 
-    public function __construct($fields, $dir, $cmp = 'n')
-    {
+    public function __construct($fields, $dir, $cmp = 'n') {
         $dir = (int) $dir < 0 ? -1 : 0;
-        $f = NULL;
+        $f = null;
         if (is_array($fields)) {
             foreach ($fields as $n => $v) {
                 if (!is_int($n) && is_int($v)) {
                     $v = $v < 0 ? ~$dir : $dir;
-                } else {
+                }
+                else {
                     $n = $v;
                     $v = $dir;
                 }
                 $f[$n] = $v;
             }
-        } else {
+        }
+        else {
             $fields = preg_split('#[,;\\|]#', $fields);
             foreach ($fields as $v) {
                 @[$n, $v] = preg_split('#[\\:=]#', $v);
@@ -782,7 +812,7 @@ class _fasort_cmp_class
         if ($f) {
             foreach ($f as $n => $v) {
                 if (substr($n, -1) == '(') {
-                    $v = array($v);
+                    $v = [$v];
                     $t = explode('(', substr($n, 0, -1));
                     foreach ($t as $i) {
                         if (!is_callable($i)) {
@@ -806,8 +836,7 @@ class _fasort_cmp_class
      * @param  array $b
      * @return int   0 for ==, -1 for < and 1 for >
      */
-    function _($a, $b)
-    {
+    public function _($a, $b) {
         $c = $this->c;
         foreach ($this->f as $f => $d) {
             if (is_array($d)) {
@@ -820,7 +849,8 @@ class _fasort_cmp_class
                     $y = $f($y); // $y = call_user_func($f, $y);
                 }
                 $d = $d[0];
-            } else {
+            }
+            else {
                 $x = is_object($a) ? $a->$f : @$a[$f];
                 $y = is_object($b) ? $b->$f : @$b[$f];
             }
@@ -837,8 +867,7 @@ class _fasort_cmp_class
      * @param  mixed $y
      * @return int
      */
-    function n($x, $y)
-    {
+    public function n($x, $y) {
         if ($x < $y) {
             return -2;
         }
@@ -849,8 +878,7 @@ class _fasort_cmp_class
         return 0;
     }
 
-    function l($x, $y)
-    {
+    public function l($x, $y) {
         if (isset($x) && isset($y)) {
             if ($x < $y) {
                 return -2;
@@ -859,7 +887,8 @@ class _fasort_cmp_class
             if ($x > $y) {
                 return +1;
             }
-        } else {
+        }
+        else {
             if (isset($x)) {
                 return -2;
             }
@@ -870,20 +899,19 @@ class _fasort_cmp_class
         }
     }
 
-    function s($x, $y)
-    {
+    public function s($x, $y) {
         if ($r = strcmp($x, $y)) {
             return $r & -2 | 2;
         }
     }
 
-    function t($x, $y)
-    {
+    public function t($x, $y) {
         if (isset($x) && isset($y)) {
             if ($r = strcmp($x, $y)) {
                 return $r & -2 | 2;
             }
-        } else {
+        }
+        else {
             if (isset($x)) {
                 return -2;
             }
