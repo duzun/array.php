@@ -87,7 +87,7 @@ main_in_docker() {
     echo
     echo " - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
     echo
-
+    local c
     [ -s "$workdir/tests/phpunit.xml" ] && c="-c $workdir/tests/phpunit.xml"
     phpunit tests/ $c "$@"
 
@@ -95,8 +95,6 @@ main_in_docker() {
         watchnrun "$workdir" \
             phpunit tests/ $c "$@"
     fi
-
-    ( cd "$workdir" && [ -s 'composer.json.lock' ] && mv -f -- composer.json.lock composer.json )
 }
 
 # Watch a folder and rsync files to a destination on change
@@ -112,7 +110,7 @@ watchnrun() {
         return 2
     fi
 
-    exclude=".git|node_modules|vendor|composer.json|composer.lock|composer-setup.php"
+    exclude=".git|tmp|node_modules|vendor|composer.json|composer.lock|composer-setup.php"
 
     while i=$(
         inotifywait -qr -e modify -e create \
@@ -174,6 +172,10 @@ install_dev() {
         return 2
     fi
 
+    # On exit, give the ownership of the vendor directory to the user
+    [ -n "$UID" ] && [ "$UID" -ne "$(id -u)" ] && trap "chown -R '$UID' '$workdir/vendor'" \
+        INT TERM EXIT
+
     # php < 5.6
     if php -r "die(+version_compare(PHP_VERSION,'5.6','>='));"; then
         curl -ks -L https://curl.se/ca/cacert.pem >/etc/ssl/certs/ca-certificates.crt
@@ -205,14 +207,7 @@ install_dev() {
     fi
     export PATH="$(realpath "$workdir/vendor/bin"):$PATH"
 
-    # Running the tests for a specific PHP version should not change composer.json
-    [ -s composer.json.lock ] ||
-        cp -f -- composer.json composer.json.lock
-
-    trap "cd '$workdir' && [ -s composer.json.lock ] && mv -f -- composer.json.lock composer.json" \
-        INT TERM EXIT
-
-    "$composer" require --dev "phpunit/phpunit:$phpunit_ver" -W
+    "$composer" require --dev -W "phpunit/phpunit:$phpunit_ver"
     # "$composer" dump-autoload
 
     # install composer dependencies
@@ -230,11 +225,11 @@ install_dev() {
     # The section bellow serves as an example for future, when there are dependencies:
 
     # # Update some dependencies to this PHP version
-    # "$composer" require --dev symfony/css-selector symfony/dom-crawler
+    # "$composer" require --dev -W symfony/css-selector symfony/dom-crawler
 
     # # Some dependencies are available for PHP >= 5.5 only
     # if php -r "die(+version_compare(PHP_VERSION,'5.5','<'));"; then
-    #     "$composer" require --dev php-http/mock-client php-http/discovery guzzlehttp/psr7 php-http/message php-http/message-factory
+    #     "$composer" require --dev -W php-http/mock-client php-http/discovery guzzlehttp/psr7 php-http/message php-http/message-factory
     # fi
 
     # # Remove some tools not required for testing
@@ -264,21 +259,35 @@ postinstall_dev_83() {
 
 docker_run() {
     # shellcheck disable=SC3043
-    local image vendorDir
-    image="$1"
-    vendorDir="$workdir/tmp/$image/vendor"
+    local vendorDir
+    vendorDir="$workdir/tmp/$docker_tag/vendor"
     [ -d "$vendorDir" ] || mkdir -p "$vendorDir"
+
+    # we don't want to edit composer.json accidentally
+    [ -s "$vendorDir/composer.json" ] || \
+    cat "$workdir/composer.json" > "$vendorDir/composer.json"
+
+    # Each container has its own composer.lock file
+    # to avoid conflicts between different PHP versions.
+    if [ ! -s "$vendorDir/composer.lock" ]; then
+        echo '{}' > "$vendorDir/composer.lock"
+    fi
+
     docker run --rm "-i$(tty -s && echo t)" \
-        -v "$workdir:/app" \
-        -u "$(id -u):0" \
+        -u "0:$(id -g)" \
+        -e "UID=$(id -u)" \
+        -e "USER=$(id -un)" \
         -e "HOME=/app/vendor" \
+        -v "$workdir:/app" \
+        -v "$vendorDir/composer.json:/app/composer.json" \
+        -v "$vendorDir/composer.lock:/app/composer.lock" \
         --mount 'type=bind,"src='"$vendorDir"'",dst=/app/vendor' \
         -w /app "$@"
 }
 
 main() {
     # shellcheck disable=SC3043
-    local version docker_tag
+    local version
 
     # By default test the latest PHP version
     [ $# -eq 0 ] && set -- "$(composer_php_vers | tail -1)"
@@ -336,8 +345,6 @@ main() {
         return $?
         ;;
     esac
-
-    rm -f -- "$workdir/composer.lock"
 
     if [ -f /.dockerenv ]; then
         main_in_docker "$@"
